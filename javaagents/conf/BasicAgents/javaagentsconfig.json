@@ -1,0 +1,14 @@
+{
+  "agents" : {
+    "Magellan1" : {"entity" : "connectionA1", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan2" : {"entity" : "connectionA2", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan3" : {"entity" : "connectionA3", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan4" : {"entity" : "connectionA4", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan5" : {"entity" : "connectionA5", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan6" : {"entity" : "connectionA6", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan7" : {"entity" : "connectionA7", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan8" : {"entity" : "connectionA8", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan9" : {"entity" : "connectionA9", "team" : "A", "class" : "MagellanAgent"},
+    "Magellan10" : {"entity" : "connectionA10", "team" : "A", "class" : "MagellanAgent"}
+  }
+}
