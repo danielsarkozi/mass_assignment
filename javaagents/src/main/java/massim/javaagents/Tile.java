@@ -8,8 +8,8 @@ public class Tile{
     }
 
     private Type type;
-    int x;
-    int y;
+    private int x;
+    private int y;
 
     public Tile( Type type, int x, int y ){
         this.type = type;
@@ -17,7 +17,7 @@ public class Tile{
         this.y = y;
     }
 
-    
+
 
 
 }
