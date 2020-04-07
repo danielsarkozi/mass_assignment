@@ -3,6 +3,8 @@
 
 ### AgentMap
 
+AgentMap is used to represent the surroundings discovered so far by the agent. Each agent is equiped with an AgentMap which comes with a coordinate system unique to the robot and is based on the agent's spawn point. 
+
 ```java
     private int origoX;
     private int origoY;
