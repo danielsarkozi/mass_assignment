@@ -8,6 +8,7 @@ import massim.javaagents.MailService;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,8 @@ public class MagellanAgent extends Agent {
     private Objective currentObjective;
     private Direction prevDirection;
 
+    Set<Direction> directions = new HashSet<Direction>(); 
+
     enum Objective {
         Discovery, GetMaterial, DropMaterial
     }
@@ -36,6 +39,10 @@ public class MagellanAgent extends Agent {
         this.map = new AgentMap();
         this.currentObjective = Objective.Discovery;
         this.prevDirection = Direction.N;
+        directions.add(Direction.N);
+        directions.add(Direction.W);
+        directions.add(Direction.E);
+        directions.add(Direction.S);
     }
 
     @Override
@@ -79,6 +86,7 @@ public class MagellanAgent extends Agent {
             case Discovery:
 
                 Set<Direction> bannedDirs = new HashSet<Direction>();
+                Set<Direction> originalDirs = new HashSet<>(directions);
 
                 say("Yay, I'm discovering my surroundings!");
                 banDirections(bannedDirs, thingList);
@@ -86,16 +94,23 @@ public class MagellanAgent extends Agent {
                 if (!bannedDirs.contains(prevDirection)) {
                     return new Identifier(decyphDir(prevDirection));
                 }else{
-                    for(Direction dir : Direction.values()){
-                        if (!bannedDirs.contains(dir)){
-                            prevDirection = dir;
+                    originalDirs.removeAll(bannedDirs);
+                    int size = originalDirs.size();
+                    int item = new Random().nextInt(size);
+                    int i = 0;
+                    for(Direction dir : originalDirs){
+                        if (i == item)
                             return new Identifier(decyphDir(dir));
-                        }
+                        i++;
                     }
                 }
             default:
                 return new Identifier("n");
         }
+    }
+
+    public void goToObjective(){
+        
     }
 
     public void banDirections(Set<Direction> bannedDirs, List<Percept> elemList){
@@ -123,6 +138,13 @@ public class MagellanAgent extends Agent {
         }
     }
 
+    public Direction getRelativeDirectionToElem( int selfX, int selfY, int elemX, int elemY ){
+
+
+
+        return Direction.N;
+    }
+
     public int getCoord(Object p) {
         return Integer.parseInt(p.toString());
     }
@@ -144,15 +166,19 @@ public class MagellanAgent extends Agent {
         switch (dir) {
             case W:
                 say("Let's go west!");
+                updatePosition(this.map.getRelX()-1, this.map.getRelY());
                 return "w";
             case E:
                 say("Let's go east!");
+                updatePosition(this.map.getRelX()+1, this.map.getRelY());
                 return "e";
             case S:
                 say("Let's go south!");
+                updatePosition(this.map.getRelX(), this.map.getRelY()+1);
                 return "s";
             case N:
                 say("Let's go north!");
+                updatePosition(this.map.getRelX(), this.map.getRelY()-1);
                 return "n";
             default:
                 return "Wrong direction!";
