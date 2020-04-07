@@ -72,3 +72,14 @@ and the enum class is Defined like below:
 
 The two method that came in top, are use for the basic agent activity.
 The Agent called ** Magellan ** and the main source file of the agent is ```MagellanAgent.java```.
+### Magellan Agent Task:
+This stage of the project divided to the following phases:
+* Discovery ( also update the map).
+> when and agent finish the discovering map it change the phase to complete the tasks.
+* Get Material.
+* Drop The Material.
+
+### AgentMap
+In this file we have an ```update``` function that responsible to locate the different object and update the map. this function is running at the first phase which is discovery.
+
+
