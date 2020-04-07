@@ -42,6 +42,10 @@ public class AgentMap {
         this.relativeY = y;
     }
 
+    public void addTile(Tile tile){
+        this.gameMap.add(tile);
+    }
+
     public int getDistance( int destX, int destY ){
         return Math.abs(relativeX-destX) + Math.abs(relativeY-destY);
     }

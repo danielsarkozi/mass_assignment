@@ -81,50 +81,8 @@ public class MagellanAgent extends Agent {
                 Set<Direction> bannedDirs = new HashSet<Direction>();
 
                 say("Yay, I'm discovering my surroundings!");
-                for (Percept o : thingList) {
-                    int x = getCoord(o.getClonedParameters().get(0));
-                    int y = getCoord(o.getClonedParameters().get(1));
-                    if (this.map.getDistance(x, y) == 1) {
-                        switch (getDirToElem(x, y)) {
-                            case W:
-                                bannedDirs.add(Direction.W);
-                                break;
-                            case E:
-                                bannedDirs.add(Direction.E);
-                                break;
-                            case S:
-                                bannedDirs.add(Direction.S);
-                                break;
-                            case N:
-                                bannedDirs.add(Direction.N);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-                for (Percept o : obstacleList) {
-                    int x = getCoord(o.getClonedParameters().get(0));
-                    int y = getCoord(o.getClonedParameters().get(1));
-                    if (this.map.getDistance(x, y) == 1) {
-                        switch (getDirToElem(x, y)) {
-                            case W:
-                                bannedDirs.add(Direction.W);
-                                break;
-                            case E:
-                                bannedDirs.add(Direction.E);
-                                break;
-                            case S:
-                                bannedDirs.add(Direction.S);
-                                break;
-                            case N:
-                                bannedDirs.add(Direction.N);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
+                banDirections(bannedDirs, thingList);
+                banDirections(bannedDirs, obstacleList);
                 if (!bannedDirs.contains(prevDirection)) {
                     return new Identifier(decyphDir(prevDirection));
                 }else{
@@ -137,6 +95,31 @@ public class MagellanAgent extends Agent {
                 }
             default:
                 return new Identifier("n");
+        }
+    }
+
+    public void banDirections(Set<Direction> bannedDirs, List<Percept> elemList){
+        for (Percept elem : elemList) {
+            int x = getCoord(elem.getClonedParameters().get(0));
+            int y = getCoord(elem.getClonedParameters().get(1));
+            if (this.map.getDistance(x, y) == 1) {
+                switch (getDirToElem(x, y)) {
+                    case W:
+                        bannedDirs.add(Direction.W);
+                        break;
+                    case E:
+                        bannedDirs.add(Direction.E);
+                        break;
+                    case S:
+                        bannedDirs.add(Direction.S);
+                        break;
+                    case N:
+                        bannedDirs.add(Direction.N);
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
     }
 
