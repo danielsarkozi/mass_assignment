@@ -4,7 +4,7 @@ package massim.javaagents;
 public class Tile{
 
     public enum Type{
-        EMPTY, OBSTACLE, THING
+        EMPTY, OBSTACLE, ELEMENT, AGENT, DISPENSER
     }
 
     private Type type;
@@ -17,7 +17,15 @@ public class Tile{
         this.y = y;
     }
 
+    public Type getType(){
+        return this.type;
+    }
 
+	public int getX() {
+		return this.x;
+	}
 
-
+    public int getY() {
+		return this.y;
+	}
 }

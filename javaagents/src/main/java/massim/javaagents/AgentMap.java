@@ -1,6 +1,9 @@
 package massim.javaagents;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import massim.javaagents.Tile.Type;;
 
 public class AgentMap {
 
@@ -15,6 +18,8 @@ public class AgentMap {
     public AgentMap( ){
         this.origoX = 0;
         this.origoY = 0;
+        this.relativeX = 0;
+        this.relativeY = 0;
         this.gameMap = new ArrayList<Tile>();
     }
 
@@ -48,6 +53,30 @@ public class AgentMap {
 
     public int getDistance( int destX, int destY ){
         return Math.abs(relativeX-destX) + Math.abs(relativeY-destY);
+    }
+
+    public List<Tile> getStoredElementsByType(Type type){
+        List<Tile> ret = new ArrayList<Tile>();
+
+        for( Tile tile : this.gameMap ){
+            if(tile.getType() == type){
+                ret.add(tile);
+            }
+        }
+
+        return ret;
+    }
+
+    public Tile getClosestElement(Type tipe){
+        Tile ret_tile = getStoredElementsByType(tipe).get(0);
+        int min = getDistance(ret_tile.getX(), ret_tile.getX());
+        for (Tile tile : getStoredElementsByType(tipe)){
+            if( getDistance(tile.getX(), tile.getX()) < min ){
+                min = getDistance(tile.getX(), tile.getX());
+                ret_tile = tile;
+            }
+        }
+        return ret_tile;
     }
 
 }
