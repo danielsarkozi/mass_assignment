@@ -6,9 +6,7 @@
 AgentMap is used to represent the surroundings discovered so far by the agent. Each agent is equiped with an AgentMap which comes with a coordinate system unique to the robot and is based on the agent's spawn point. 
 
 ```java
-    private int origoX;
-    private int origoY;
-
+    // Current coordinates relative to the spawn point.
     private int relativeX;
     private int relativeY;
 ```
@@ -30,19 +28,19 @@ public int getDistance( int destX, int destY ){
     }
 ```
 
-X and Y are the two point in our 2D System that defined as a list( **enum** ):
+Every tile on the map encountered by the agent is stored in a list:
 
-called at:
 ```java
         private ArrayList<Tile> gameMap;
 ```
 
-and the enum class is Defined like below:
+The Tile class represents each segment of the map, and can have various types assigned to it, these include:
+EMPTY, OBSTACLE, ELEMENT, AGENT, DISPENSER as defined in the MAS scenario documentation.
 ```java
     public class Tile{
 
         public enum Type{
-            EMPTY, OBSTACLE, THING
+            EMPTY, OBSTACLE, ELEMENT, AGENT, DISPENSER
         }
 
         private Type type;
@@ -59,7 +57,7 @@ and the enum class is Defined like below:
 ```
 
 ## Task of each agent
-> In general, there are two type of Task: 
+> In general, there are three type of Task: 
 
 ### Basic Agent Task:
 ```java
@@ -69,6 +67,11 @@ and the enum class is Defined like below:
 
     public void handleMessage(Percept message, String sender) {
         System.out.println( this.getName() + " Basic message" );
+    }
+    
+    @Override
+    public Action step() {
+        //Lots of action
     }
 ```
 
