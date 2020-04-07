@@ -27,3 +27,48 @@ public int getDistance( int destX, int destY ){
         return Math.abs(relativeX-destX) + Math.abs(relativeY-destY);
     }
 ```
+
+X and Y are the two point in our 2D System that defined as a list( **enum** ):
+
+called at:
+```java
+        private ArrayList<Tile> gameMap;
+```
+
+and the enum class is Defined like below:
+```java
+    public class Tile{
+
+        public enum Type{
+            EMPTY, OBSTACLE, THING
+        }
+
+        private Type type;
+        int x;
+        int y;
+
+        public Tile( Type type, int x, int y ){
+            this.type = type;
+            this.x = x;
+            this.y = y;
+        }
+
+    }
+```
+
+## Task of each agent
+> In general, there are two type of Task: 
+
+### Basic Agent Task:
+```java
+    public void handlePercept(Percept percept) {
+        System.out.println( this.getName() + " Basic percept" );
+    }
+
+    public void handleMessage(Percept message, String sender) {
+        System.out.println( this.getName() + " Basic message" );
+    }
+```
+
+The two method that came in top, are use for the basic agent activity.
+The Agent called ** Magellan ** and the main source file of the agent is ```MagellanAgent.java```.
