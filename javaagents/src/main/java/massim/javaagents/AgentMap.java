@@ -86,4 +86,8 @@ public class AgentMap {
         return ret_tile;
     }
 
+    public Tile getTileByCoord( Coord coord ){
+        return this.gameMap.get(coord);
+    }
+
 }
