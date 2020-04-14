@@ -72,6 +72,8 @@ public class MagellanAgent extends Agent {
 
         updateCurrentObjective(percepts);
 
+        say( "I'm in " + this.currentObjective + " phase");
+
         switch (currentObjective) {
             case Discovery:
                 return stepDiscovery(percepts);
@@ -120,6 +122,7 @@ public class MagellanAgent extends Agent {
     }
 
     private Action stepGetMaterial(List<Percept> percepts) {
+
         List<Percept> obstacleList = percepts.stream().filter(p -> p.getName().equals("obstacle"))
                 .collect(Collectors.toList());
         List<Percept> thingList = percepts.stream().filter(p -> p.getName().equals("thing"))
@@ -144,8 +147,7 @@ public class MagellanAgent extends Agent {
         if (this.map.getDistance(goal.getX(), goal.getX()) > 0) {
             return new Action("move", getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY(), obstacleList, thingList));
         } else {
-            return new Action("detach",
-                    getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY(), obstacleList, thingList));
+            return new Action("detach",getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY(), obstacleList, thingList));
         }
     }
 
@@ -172,12 +174,20 @@ public class MagellanAgent extends Agent {
                 } else {
                     originalDirs.removeAll(bannedDirs);
                     int size = originalDirs.size();
-                    int item = new Random().nextInt(size);
-                    int i = 0;
-                    for (Direction dir : originalDirs) {
-                        if (i == item)
-                            return new Identifier(decyphDir(dir));
-                        i++;
+                    if(size>0){
+                        int item = new Random().nextInt(size);
+                        int i = 0;
+                        for (Direction dir : originalDirs) {
+                            if (i == item){
+                                this.prevDirection = dir;
+                                return new Identifier(decyphDir(dir));
+                            }
+                            i++;
+                        }
+                    }else{
+                        // agent is stuck
+                        say("I am stuck! :(");
+                        return new Identifier("n");
                     }
                 }
             default:

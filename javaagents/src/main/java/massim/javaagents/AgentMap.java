@@ -1,7 +1,10 @@
 package massim.javaagents;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import massim.javaagents.Coord;
 
 import massim.javaagents.Tile.Type;;
 
@@ -13,14 +16,14 @@ public class AgentMap {
     private int relativeX;
     private int relativeY;
 
-    private ArrayList<Tile> gameMap;
+    private HashMap<Coord, Tile> gameMap;
 
     public AgentMap( ){
         this.origoX = 0;
         this.origoY = 0;
         this.relativeX = 0;
         this.relativeY = 0;
-        this.gameMap = new ArrayList<Tile>();
+        this.gameMap = new HashMap<Coord, Tile>();
     }
 
     public int getRelX(){
@@ -48,17 +51,21 @@ public class AgentMap {
     }
 
     public void addTile(Tile tile){
-        this.gameMap.add(tile);
+        this.gameMap.put(new Coord(tile.getX(), tile.getY()), tile);
     }
 
     public int getDistance( int destX, int destY ){
+        return Math.abs(destX) + Math.abs(destY);
+    }
+
+    public int getDistanceFromSpawn( int destX, int destY ){
         return Math.abs(relativeX-destX) + Math.abs(relativeY-destY);
     }
 
     public List<Tile> getStoredElementsByType(Type type){
         List<Tile> ret = new ArrayList<Tile>();
 
-        for( Tile tile : this.gameMap ){
+        for( Tile tile : this.gameMap.values() ){
             if(tile.getType() == type){
                 ret.add(tile);
             }
