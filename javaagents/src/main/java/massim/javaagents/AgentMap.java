@@ -62,22 +62,10 @@ public class AgentMap {
         return Math.abs(relativeX-destX) + Math.abs(relativeY-destY);
     }
 
-    public List<Tile> getStoredElementsByType(Type type){
-        List<Tile> ret = new ArrayList<Tile>();
-
-        for( Tile tile : this.gameMap.values() ){
-            if(tile.getType() == type){
-                ret.add(tile);
-            }
-        }
-
-        return ret;
-    }
-
-    public Tile getClosestElement(Type tipe){
-        Tile ret_tile = getStoredElementsByType(tipe).get(0);
+    public Tile getClosestElement(Type type){
+        Tile ret_tile = getTilesByType(type).get(0);
         int min = getDistance(ret_tile.getX(), ret_tile.getX());
-        for (Tile tile : getStoredElementsByType(tipe)){
+        for (Tile tile : getTilesByType(type)){
             if( getDistance(tile.getX(), tile.getX()) < min ){
                 min = getDistance(tile.getX(), tile.getX());
                 ret_tile = tile;
@@ -90,4 +78,47 @@ public class AgentMap {
         return this.gameMap.get(coord);
     }
 
+    public ArrayList<Tile> getTilesByType( Tile.Type type ){
+        ArrayList<Tile> tileList = new ArrayList<>();
+        for( Tile tile : this.gameMap.values() ){
+            if(type == tile.getType()){
+                tileList.add(tile);
+            }
+        }
+        return tileList;
+    }
+
+    public ArrayList<Tile> getTilesByType( Tile.Type type, String name ){
+        ArrayList<Tile> tileList = new ArrayList<>();
+        for( Tile tile : this.gameMap.values() ){
+            if(type == tile.getType() && name.equals(tile.getName())){
+                tileList.add(tile);
+            }
+        }
+        return tileList;
+    }
+
+    public void getAgentMap(){
+        for(Tile tile : this.gameMap.values()){
+            System.out.println( "(" + tile.getX() + ", " + tile.getY() + ") - " + tile.getType() );
+        }
+    }
+
+    public boolean hasTile( Tile.Type type ){
+        for( Tile tile : this.gameMap.values() ){
+            if( type == tile.getType() ){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasTile( Tile.Type type, String name ){
+        for( Tile tile : this.gameMap.values() ){
+            if( type == tile.getType() && name.equals(tile.getName()) ){
+                return true;
+            }
+        }
+        return false;
+    }
 }

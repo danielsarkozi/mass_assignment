@@ -70,10 +70,9 @@ public class MagellanAgent extends Agent {
 
         updateCurrentObjective(percepts);
 
-        say( "I'm in " + this.currentObjective + " phase");
+        say("I'm in " + this.currentObjective + " phase");
 
-        List<Percept> goalList = percepts.stream().filter(p -> p.getName().equals("goal"))
-                .collect(Collectors.toList());
+        List<Percept> goalList = percepts.stream().filter(p -> p.getName().equals("goal")).collect(Collectors.toList());
         List<Percept> obstacleList = percepts.stream().filter(p -> p.getName().equals("obstacle"))
                 .collect(Collectors.toList());
         List<Percept> thingList = percepts.stream().filter(p -> p.getName().equals("thing"))
@@ -100,15 +99,25 @@ public class MagellanAgent extends Agent {
             currentTask = null;
             currentObjective = Objective.Discovery;
         } else if (!taskList.contains(currentTask)) {
+
             System.out.println("found a new task!");
             currentTask = taskList.get(0);
+            if(currentTask.getClonedParameters().size() >= 3){
+                Parameter p = currentTask.getClonedParameters().get(3);
+                
+                for( Parameter param : (ParameterList) currentTask.getClonedParameters().get(3)){
+                    System.out.println("asd");
+                }
+            }
+            currentObjective = Objective.GetMaterial;
         }
 
-        if (currentObjective == Objective.GetMaterial && (targetBlock = getNextBlock()) == null)
-            currentObjective = Objective.Discovery;
-
-        if (hasBlockForTask(currentTask))
-            currentObjective = Objective.DropMaterial;
+        /*
+         * if (currentObjective == Objective.GetMaterial && (targetBlock =
+         * getNextBlock()) == null) currentObjective = Objective.Discovery;
+         * 
+         * if (hasBlockForTask(currentTask)) currentObjective = Objective.DropMaterial;
+         */
     }
 
     private Coord getNextBlock() {
@@ -127,10 +136,11 @@ public class MagellanAgent extends Agent {
 
         Tile goal = this.map.getClosestElement(Type.DISPENSER);
         if (this.map.getDistance(goal.getX(), goal.getX()) > 0) {
-            return new Action("move", getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY(), obstacleList, thingList));
+            return new Action("move", getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                    goal.getY(), obstacleList, thingList));
         } else {
-            return new Action("attach",
-                    getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY(), obstacleList, thingList));
+            return new Action("attach", getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                    goal.getY(), obstacleList, thingList));
         }
     }
 
@@ -138,41 +148,41 @@ public class MagellanAgent extends Agent {
 
         Tile goal = this.map.getClosestElement(Type.GOAL);
         if (this.map.getDistance(goal.getX(), goal.getX()) > 0) {
-            return new Action("move", getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY(), obstacleList, thingList));
+            return new Action("move", getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                    goal.getY(), obstacleList, thingList));
         } else {
-            return new Action("detach",getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY(), obstacleList, thingList));
+            return new Action("detach", getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                    goal.getY(), obstacleList, thingList));
         }
     }
 
     public void updateMap(List<Percept> obstacleList, List<Percept> thingList, List<Percept> goalList) {
-        for (Percept p : obstacleList){
+        for (Percept p : obstacleList) {
             int relX = this.map.getRelX() + getCoord(p.getClonedParameters().get(0));
             int relY = this.map.getRelY() + getCoord(p.getClonedParameters().get(1));
-            Tile tile = new Tile( Tile.Type.OBSTACLE, relX, relY );
+            Tile tile = new Tile(Tile.Type.OBSTACLE, relX, relY);
             this.map.addTile(tile);
         }
 
-        for (Percept p : thingList){
+        for (Percept p : thingList) {
             String type = p.getClonedParameters().get(2).toString();
             String name = p.getClonedParameters().get(3).toString();
             int relX = this.map.getRelX() + getCoord(p.getClonedParameters().get(0));
             int relY = this.map.getRelY() + getCoord(p.getClonedParameters().get(1));
-            if( type.equals("dispenser") ){
-                Tile tile = new Tile( Tile.Type.DISPENSER, relX, relY );
+            if (type.equals("dispenser")) {
+                Tile tile = new Tile(Tile.Type.DISPENSER, relX, relY);
                 tile.setName(name);
                 this.map.addTile(tile);
             }
         }
 
-        for (Percept p : goalList){
+        for (Percept p : goalList) {
             int relX = this.map.getRelX() + getCoord(p.getClonedParameters().get(0));
             int relY = this.map.getRelY() + getCoord(p.getClonedParameters().get(1));
-            Tile tile = new Tile( Tile.Type.GOAL, relX, relY );
+            Tile tile = new Tile(Tile.Type.GOAL, relX, relY);
             this.map.addTile(tile);
         }
     }
-
-
 
     public void updatePosition(int x, int y) {
         this.map.setRelX(x);
@@ -180,38 +190,35 @@ public class MagellanAgent extends Agent {
     }
 
     public Identifier getDirection(List<Percept> obstacleList, List<Percept> thingList) {
-        switch (this.currentObjective) {
-            case Discovery:
 
-                Set<Direction> bannedDirs = new HashSet<Direction>();
-                Set<Direction> originalDirs = new HashSet<>(directions);
+        Set<Direction> bannedDirs = new HashSet<Direction>();
+        Set<Direction> originalDirs = new HashSet<>(directions);
 
-                banDirections(bannedDirs, thingList);
-                banDirections(bannedDirs, obstacleList);
-                if (!bannedDirs.contains(prevDirection)) {
-                    return new Identifier(decyphDir(prevDirection));
-                } else {
-                    originalDirs.removeAll(bannedDirs);
-                    int size = originalDirs.size();
-                    if(size>0){
-                        int item = new Random().nextInt(size);
-                        int i = 0;
-                        for (Direction dir : originalDirs) {
-                            if (i == item){
-                                this.prevDirection = dir;
-                                return new Identifier(decyphDir(dir));
-                            }
-                            i++;
-                        }
-                    }else{
-                        // agent is stuck
-                        say("I am stuck! :(");
-                        return new Identifier("n");
+        banDirections(bannedDirs, thingList);
+        banDirections(bannedDirs, obstacleList);
+        if (!bannedDirs.contains(prevDirection)) {
+            return new Identifier(decyphDir(prevDirection));
+        } else {
+            originalDirs.removeAll(bannedDirs);
+            int size = originalDirs.size();
+            if (size > 0) {
+                int item = new Random().nextInt(size);
+                int i = 0;
+                for (Direction dir : originalDirs) {
+                    if (i == item) {
+                        this.prevDirection = dir;
+                        return new Identifier(decyphDir(dir));
                     }
+                    i++;
                 }
-            default:
+            } else {
+                // agent is stuck
+                say("I am stuck! :(");
                 return new Identifier("n");
+            }
         }
+
+        return new Identifier("Error");
     }
 
     public void banDirections(Set<Direction> bannedDirs, List<Percept> elemList) {
@@ -239,7 +246,8 @@ public class MagellanAgent extends Agent {
         }
     }
 
-    public Identifier getRelativeDirectionToElem(int selfX, int selfY, int elemX, int elemY, List<Percept> obstacleList, List<Percept> thingList) {
+    public Identifier getRelativeDirectionToElem(int selfX, int selfY, int elemX, int elemY, List<Percept> obstacleList,
+            List<Percept> thingList) {
 
         Set<Direction> bannedDirs = new HashSet<Direction>();
         Set<Direction> originalDirs = new HashSet<>(directions);
@@ -254,25 +262,25 @@ public class MagellanAgent extends Agent {
 
         Direction retDir;
 
-        if(selfX > elemX){
-            distX = Math.abs(selfX-elemX);
+        if (selfX > elemX) {
+            distX = Math.abs(selfX - elemX);
             propX = Direction.W;
-        }else{
-            distX = Math.abs(elemX-selfX);
+        } else {
+            distX = Math.abs(elemX - selfX);
             propX = Direction.E;
         }
 
-        if(selfY > elemY){
-            distY = Math.abs(selfY-elemY);
+        if (selfY > elemY) {
+            distY = Math.abs(selfY - elemY);
             propY = Direction.N;
-        }else{
-            distY = Math.abs(elemY-selfY);
+        } else {
+            distY = Math.abs(elemY - selfY);
             propY = Direction.S;
         }
 
-        if(distX>distY){
+        if (distX > distY) {
             retDir = propX;
-        }else{
+        } else {
             retDir = propY;
         }
 
