@@ -1,5 +1,6 @@
 package massim.javaagents.agents;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -12,6 +13,7 @@ import massim.javaagents.Coord;
 import massim.javaagents.MailService;
 import massim.javaagents.Tile;
 import massim.javaagents.Tile.Type;
+import massim.javaagents.TaskElement;
 
 public class MagellanAgent extends Agent {
 
@@ -26,6 +28,7 @@ public class MagellanAgent extends Agent {
     private Direction prevDirection;
     private Percept currentTask;
     private Coord targetBlock;
+    private ArrayList<TaskElement> agentTask = new ArrayList<TaskElement>(); 
 
     Set<Direction> directions = new HashSet<Direction>();
 
@@ -100,13 +103,19 @@ public class MagellanAgent extends Agent {
             currentObjective = Objective.Discovery;
         } else if (!taskList.contains(currentTask)) {
 
-            System.out.println("found a new task!");
+            say("Accepted a new task!");
             currentTask = taskList.get(0);
             if(currentTask.getClonedParameters().size() >= 3){
                 Parameter p = currentTask.getClonedParameters().get(3);
                 
                 for( Parameter param : (ParameterList) currentTask.getClonedParameters().get(3)){
-                    System.out.println("asd");
+                    Function f = (Function) param;
+                    int taskX = Integer.parseInt(f.getParameters().get(0).toString());
+                    int taskY = Integer.parseInt(f.getParameters().get(1).toString());
+                    String taskName = f.getParameters().get(2).toString();
+
+                    TaskElement te = new TaskElement(taskX, taskY, taskName);
+                    agentTask.add(te);
                 }
             }
             currentObjective = Objective.GetMaterial;
