@@ -142,6 +142,7 @@ public class MagellanAgent extends Agent {
     
                     if(acceptTask){
                         this.currentObjective = Objective.GetMaterial;
+                        currentTask = task;
                         this.agentTasks = new ArrayList<TaskElement>(tempList);
                         if( this.agentTasks.size() > 0 ){
                             this.targetBlock = this.agentTasks.get(0);
@@ -201,22 +202,26 @@ public class MagellanAgent extends Agent {
     }
 
     private Action stepDiscovery(List<Percept> obstacleList, List<Percept> thingList) {
-        return new Action("move", this.getDirection(obstacleList, thingList));
+        Identifier dir = this.getDirection(obstacleList, thingList);
+        moveAgent(dir.toString());
+        return new Action("move", dir);
     }
 
     private Action stepGetMaterial(List<Percept> obstacleList, List<Percept> thingList) {
 
         Tile goal = this.map.getClosestElement(Type.DISPENSER, this.targetBlock.getName());
         if (this.map.getDistanceFromSpawn(goal.getX(), goal.getY()) > 1) {
-            return new Action("move", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-                    goal.getY(), obstacleList, thingList));
+            Identifier dir = getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                    goal.getY(), obstacleList, thingList);
+            moveAgent(dir.toString());
+            return new Action("move", dir);
         } else {
             this.currentObjective = Objective.DropMaterial;
             Direction dir = getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY());
             attachedBlock = new TaskElement(targetBlock);
             attachedBlock.setIsAttached(true);
             attachedBlock.setDirection(dir);
-            
+            say("I grab " + targetBlock.getName() + " block");
             return new Action("attach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
                     goal.getY(), obstacleList, thingList));
             /*Identifier dir = getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
@@ -230,13 +235,16 @@ public class MagellanAgent extends Agent {
 
         Tile goal = this.map.getClosestElement(Type.GOAL);
         if (this.map.getDistanceFromSpawn(goal.getX(), goal.getY()) > 1) {
-            return new Action("move", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-                    goal.getY(), obstacleList, thingList));
+            Identifier dir = getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                    goal.getY(), obstacleList, thingList);
+            moveAgent(dir.toString());
+            return new Action("move", dir);
         } else {
             if(agentTasks.size() > 0){
                 targetBlock = agentTasks.remove(0);
-                this.currentObjective = Objective.GetMaterial;
+                this.currentTask = null;
             }
+            say("I drop " + targetBlock.getName() + " block");
             return new Action("detach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
                     goal.getY(), obstacleList, thingList));
         }
@@ -297,7 +305,6 @@ public class MagellanAgent extends Agent {
             Tile tile = new Tile(Tile.Type.EMPTY, relX, relY);
             this.map.addTile(tile);
         }
-        System.out.println("asd");
     }
 
     public void updatePosition(int x, int y) {
@@ -345,7 +352,7 @@ public class MagellanAgent extends Agent {
             } else {
                 // agent is stuck
                 say("I am stuck! :(");
-                return new Identifier("n");
+                return new Identifier("Error");
             }
         }
 
@@ -396,7 +403,6 @@ public class MagellanAgent extends Agent {
         Set<Direction> bannedDirs = new HashSet<Direction>();
         Set<Direction> originalDirs = new HashSet<>(directions);
 
-        banDirections(bannedDirs, thingList);
         banDirections(bannedDirs, obstacleList);
 
         if (selfX > elemX) {
@@ -500,23 +506,57 @@ public class MagellanAgent extends Agent {
     public String decyphDir(Direction dir) {
         switch (dir) {
             case W:
-                say("Let's go west!");
-                updatePosition(this.map.getRelX() - 1, this.map.getRelY());
                 return "w";
             case E:
-                say("Let's go east!");
-                updatePosition(this.map.getRelX() + 1, this.map.getRelY());
                 return "e";
             case S:
-                say("Let's go south!");
-                updatePosition(this.map.getRelX(), this.map.getRelY() + 1);
                 return "s";
             case N:
-                say("Let's go north!");
-                updatePosition(this.map.getRelX(), this.map.getRelY() - 1);
                 return "n";
             default:
                 return "Wrong direction!";
+        }
+    }
+
+    public void moveAgent(Direction dir) {
+        switch (dir) {
+            case W:
+                say("Let's go west!");
+                updatePosition(this.map.getRelX() - 1, this.map.getRelY());
+                break;
+            case E:
+                say("Let's go east!");
+                updatePosition(this.map.getRelX() + 1, this.map.getRelY());
+                break;
+            case S:
+                say("Let's go south!");
+                updatePosition(this.map.getRelX(), this.map.getRelY() + 1);
+                break;
+            case N:
+                say("Let's go north!");
+                updatePosition(this.map.getRelX(), this.map.getRelY() - 1);
+                break;
+        }
+    }
+
+    public void moveAgent(String dir) {
+        switch (dir) {
+            case "w":
+                say("Let's go west!");
+                updatePosition(this.map.getRelX() - 1, this.map.getRelY());
+                break;
+            case "e":
+                say("Let's go east!");
+                updatePosition(this.map.getRelX() + 1, this.map.getRelY());
+                break;
+            case "s":
+                say("Let's go south!");
+                updatePosition(this.map.getRelX(), this.map.getRelY() + 1);
+                break;
+            case "n":
+                say("Let's go north!");
+                updatePosition(this.map.getRelX(), this.map.getRelY() - 1);
+                break;
         }
     }
 }
