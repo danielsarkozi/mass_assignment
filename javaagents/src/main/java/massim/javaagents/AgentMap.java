@@ -74,6 +74,18 @@ public class AgentMap {
         return ret_tile;
     }
 
+    public Tile getClosestElement(Type type, String name){
+        Tile ret_tile = getTilesByType(type, name).get(0);
+        int min = getDistance(ret_tile.getX(), ret_tile.getX());
+        for (Tile tile : getTilesByType(type)){
+            if( getDistance(tile.getX(), tile.getX()) < min && tile.getName().equals(name)){
+                min = getDistance(tile.getX(), tile.getX());
+                ret_tile = tile;
+            }
+        }
+        return ret_tile;
+    }
+
     public Tile getTileByCoord( Coord coord ){
         return this.gameMap.get(coord);
     }
