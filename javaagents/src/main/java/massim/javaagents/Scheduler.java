@@ -11,6 +11,8 @@ import eis.iilang.Percept;
 import massim.eismassim.EnvironmentInterface;
 import massim.javaagents.agents.Agent;
 import massim.javaagents.agents.BasicAgent;
+import massim.javaagents.agents.MagellanAgent;
+
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -90,7 +92,7 @@ public class Scheduler implements AgentListener, EnvironmentListener{
                     agent = new BasicAgent(agentConf.name, mailService);
                     break;
                 case "MagellanAgent":
-                    agent = new BasicAgent(agentConf.name, mailService);
+                    agent = new MagellanAgent(agentConf.name, mailService);
                     break;
                 // [add further types here]
                 default:

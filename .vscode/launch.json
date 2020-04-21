@@ -16,7 +16,7 @@
             "request": "launch",
             "mainClass": "massim.javaagents.Main",
             "projectName": "javaagents",
-            "cwd": "C:/Users/dsarkozi/Documents/Multi Agent/Assignment/server"
+            "cwd": "C:/Users/dsarkozi/Documents/Multi Agent/Assignment/javaagents"
         },
         {
             "type": "java",
