@@ -63,8 +63,29 @@ public class MagellanAgent extends Agent {
     }
 
     @Override
-    public void handleMessage(final Percept message, final String sender) {
-        // System.out.println(this.getName() + " Magellan message");
+    public void handleMessage(Percept message, String sender) {
+
+    }
+
+
+    /**
+     * Sends a percept as a message to the given agent.
+     * The receiver agent may fetch the message the next time it is stepped.
+     * @param message the message to deliver
+     * @param receiver the receiving agent
+     * @param sender the agent sending the message
+     */
+    protected void sendMessage(Percept message, String receiver, String sender){
+        mailbox.sendMessage(message, receiver, sender);
+    }
+
+    /**
+     * Broadcasts a message to the entire team.
+     * @param message the message to broadcast
+     * @param sender the agent sending the message
+     */
+    void broadcast(Percept message, String sender){
+        mailbox.broadcast(message, sender);
     }
 
     @Override
