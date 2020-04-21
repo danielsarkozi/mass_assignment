@@ -19,6 +19,11 @@ public class Coord {
         return y;
     }
 
+    public int distanceTo(Coord coord)
+    {
+        return Math.abs(coord.x - x) + Math.abs(coord.y - y);
+    }
+
     private int x;
     private int y;
 

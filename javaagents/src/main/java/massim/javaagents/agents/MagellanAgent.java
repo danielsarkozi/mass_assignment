@@ -1,8 +1,10 @@
 package massim.javaagents.agents;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,6 +33,8 @@ public class MagellanAgent extends Agent {
     private TaskElement attachedBlock;
     private ArrayList<TaskElement> agentTasks = new ArrayList<TaskElement>();
     private int vision;
+    
+    private Map<String, Tile> attachedBlocks = new HashMap<String, Tile>();
 
     Set<Direction> directions = new HashSet<Direction>();
 
@@ -158,11 +162,41 @@ public class MagellanAgent extends Agent {
         */
     }
 
-    private TaskElement getNextBlock() {
-        return null;
+    private Tile getTargetTile() {
+        int minDist = 0;
+        Tile closestTile = null;
+        Set<String> blockType = new HashSet<>();
+        for (TaskElement te : agentTasks)
+        {
+            blockType.add(te.getName());
+        }
+
+        for (Tile tile : map.getTilesByType(Tile.Type.DISPENSER))
+        {
+            if (blockType.contains(tile.getName()))
+            {
+                int dist = new Coord(map.getRelX(), map.getRelY()).distanceTo(new Coord(tile.getX(), tile.getY()));
+                if (closestTile == null || dist < minDist)
+                {
+                    minDist = dist;
+                    closestTile = tile;
+                }
+            }
+        }
+        return closestTile;
     }
 
-    private Boolean hasBlockForTask(Percept task) {
+    private Boolean shouldGoToGoal() {
+        for (Map.Entry<String, Tile> pair : attachedBlocks.entrySet())
+        {
+            for (TaskElement te : agentTasks)
+            {
+                if (te.getName().equals(pair.getValue().getName()))
+                {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -185,6 +219,10 @@ public class MagellanAgent extends Agent {
             
             return new Action("attach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
                     goal.getY(), obstacleList, thingList));
+            /*Identifier dir = getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                goal.getY(), obstacleList, thingList);
+            attachedBlocks.put(dir.toString(), goal);
+            return new Action("attach", dir);*/
         }
     }
 
