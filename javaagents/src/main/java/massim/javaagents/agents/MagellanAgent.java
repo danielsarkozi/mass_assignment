@@ -88,6 +88,14 @@ public class MagellanAgent extends Agent {
         mailbox.broadcast(message, sender);
     }
 
+    /**
+     * Prints a message to std out prefixed with the agent's name.
+     * @param message the message to say
+     */
+    void say(String message){
+        System.out.println("[ " + name + " ]  " + message);
+    }
+
     @Override
     public Action step() {
         // System.out.println(this.getName() + " Magellan step");
