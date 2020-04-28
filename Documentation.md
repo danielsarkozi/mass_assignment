@@ -167,3 +167,119 @@ public Coord calculateAttachedCoords(){
 
 At this method the agent calculate how they can attach the block, as know from the scenario each agent can attach four blocks to itself. that's why we have the four direction for this purpose.
 > At this stage, agents can get the distance from the block it needs and if the block is the correct one agent will discover the path to it and will attached it to itself.
+
+### Messaging Service include the full code:
+
+```java
+public final class Message {
+
+    // The thing That Agent(Magellan) are sharing with each other.
+    // As we mentioned in the presentation one of the thing that agents are share with each other is path to the block.
+
+    public static final String CONTENT_TYPE_RESET = "reset";
+    public static final String CONTENT_TYPE_PERCEPT = "percept";
+    public static final String CONTENT_TYPE_AUTH_AGENTS = "authenticatedAgents";
+    public static final String CONTENT_TYPE_LOCATION = "location";
+    public static final String CONTENT_TYPE_PATH = "path";
+
+    // This is needed to serialize List<MapPercept> using Gson
+    public static final Type MAP_PERCEPT_LIST_TYPE = new TypeToken<Collection<MapPercept>>(){}.getType();
+    public static final Type MAP_AUTH_MAP_TYPE = new TypeToken<List<Position>>(){}.getType();
+    public static final String CONTENT_TYPE_NEW_STEP = "newStep";
+    public static final Type POSITION_LIST_TYPE = new TypeToken<List<Position>>(){}.getType();
+    private static final ExecutorService parseExecutor = Executors.newSingleThreadExecutor();
+    public static final String CONTENT_TYPE_AGENT_CONTAINER = "agent_update";
+
+    private String contentType;
+    private String messageBody;
+
+    private Message(String contentType, String messageBody) {
+        // content type means(path, percept, authenticated agent which is the agent that asign to the block and etc.)
+        this.contentType = contentType;
+        this.messageBody = messageBody;
+    }
+
+    public static void createAndSendPathMessage(MQSender mqSender, List<Position> positions) {
+        if(mqSender == null)
+            return;
+
+        parseExecutor.submit(() -> {
+            Message msg = new Message(CONTENT_TYPE_PATH, GsonInstance.getInstance().toJson(positions, POSITION_LIST_TYPE));
+            mqSender.sendMessage(msg);
+        });
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public String getMessageBody() {
+        return messageBody;
+    }
+
+
+    public static void createAndSendAgentContainerMessage(AgentContainer agentContainer) {
+        if(agentContainer.getMqSender() == null)
+            return;
+
+        AgentContainerMessage agentContainerMessage = new AgentContainerMessage(agentContainer);
+        parseExecutor.submit(() -> {
+            Message msg = new Message(CONTENT_TYPE_AGENT_CONTAINER, GsonInstance.getInstance().toJson(agentContainerMessage));
+            agentContainer.getMqSender().sendMessage(msg);
+        });
+    }
+
+    public static void createAndSendNewStepMessage(MQSender mqSender, long step) {
+        if(mqSender == null)
+            return;
+
+        parseExecutor.submit(() -> {
+            Message msg = new Message(CONTENT_TYPE_NEW_STEP, String.valueOf(step));
+            mqSender.sendMessage(msg);
+        });
+    }
+
+    public static void createAndSendResetMessage(MQSender mqSender) {
+        if(mqSender == null)
+            return;
+
+        parseExecutor.submit(() -> {
+            Message msg = new Message(CONTENT_TYPE_RESET, "");
+            mqSender.sendMessage(msg);
+        });
+    }
+
+    public static void createAndSendAuthenticatedMessage(MQSender mqSender, List<AuthenticatedAgent> authenticatedContainers) {
+
+        if(mqSender == null)
+            return;
+
+        parseExecutor.submit(() -> {
+            Map<Position, String> agentPositions = new HashMap<>();
+            for(AuthenticatedAgent authenticatedAgent : authenticatedContainers)
+            {
+                Position translation = authenticatedAgent.getTranslationValue();
+                Position translatedPosition = authenticatedAgent.getAgentContainer().getCurrentLocation().add(translation);
+                agentPositions.put(translatedPosition, authenticatedAgent.getAgentContainer().getAgentName());
+            }
+
+            Message msg = new Message(CONTENT_TYPE_AUTH_AGENTS, GsonInstance.getInstance().toJson(agentPositions.keySet(), MAP_AUTH_MAP_TYPE));
+            mqSender.sendMessage(msg);
+        });
+    }
+
+    public static void createAndSendPerceptMessage(MQSender mqSender, AgentLocation location, Collection<MapPercept> mapPercept) {
+
+        if (mapPercept == null || mqSender == null || location == null)
+            return;
+
+        parseExecutor.submit(() -> {
+            Message locMsg = new Message(CONTENT_TYPE_LOCATION, location.toJsonString());
+            mqSender.sendMessage(locMsg);
+
+            Message msg = new Message(CONTENT_TYPE_PERCEPT, GsonInstance.getInstance().toJson(mapPercept, MAP_PERCEPT_LIST_TYPE));
+            mqSender.sendMessage(msg);
+        });
+    }
+}
+```
