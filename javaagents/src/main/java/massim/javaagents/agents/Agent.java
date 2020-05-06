@@ -12,7 +12,7 @@ import java.util.Vector;
 public abstract class Agent {
 
     private String name;
-    private MailService mailbox;
+    public MailService mailbox;
     private List<Percept> percepts = new Vector<>();
 
     /**
