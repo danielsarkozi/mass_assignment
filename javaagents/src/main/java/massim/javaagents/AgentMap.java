@@ -63,7 +63,10 @@ public class AgentMap {
     }
 
     public Tile getClosestElement(Type type){
-        Tile ret_tile = getTilesByType(type).get(0);
+        ArrayList<Tile> tiles = getTilesByType(type);
+        if(tiles.size() == 0)
+            return null;
+        Tile ret_tile = tiles.get(0);
         int min = getDistance(ret_tile.getX(), ret_tile.getX());
         for (Tile tile : getTilesByType(type)){
             if( getDistance(tile.getX(), tile.getX()) < min ){
@@ -75,7 +78,10 @@ public class AgentMap {
     }
 
     public Tile getClosestElement(Type type, String name){
-        Tile ret_tile = getTilesByType(type, name).get(0);
+        ArrayList<Tile> tiles = getTilesByType(type, name);
+        if(tiles.size() == 0)
+            return null;
+        Tile ret_tile = tiles.get(0);
         int min = getDistance(ret_tile.getX(), ret_tile.getX());
         for (Tile tile : getTilesByType(type)){
             if( getDistance(tile.getX(), tile.getX()) < min && tile.getName().equals(name)){
