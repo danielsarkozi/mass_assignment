@@ -20,12 +20,7 @@ import massim.javaagents.TaskElement;
 
 public class MagellanAgent extends Agent {
 
-    /**
-     * Constructor.
-     * 
-     * @param name    the agent's name
-     * @param mailbox the mail facility
-     */
+
     public final String MOVE = "move";
     public final String ATTACH = "attach";
     public final String DETACH = "detach";
@@ -36,7 +31,16 @@ public class MagellanAgent extends Agent {
     public final String CLEAR = "clear";
     public final String DISCONNECT = "disconnect";
     public final String SKIP = "skip";
+
     public final String TEAM = "A";
+    public final String VOTE = "vote";
+    public final String VOTEPROP = "votePropose";
+    public final String ACCEPT = "accept";
+    public final String NAME = "name";
+    public final String COORDS = "coords";
+    public final String GO = "go";
+    public final String NOGO = "nogo";
+
 
     private AgentMap map;
     private String connection;
@@ -49,6 +53,14 @@ public class MagellanAgent extends Agent {
     private int vision;
     private Action nextAction = null;
     private boolean isFirstStep = true;
+    private HashMap<String, TaskVote> voteMap = new HashMap<>();
+    private boolean needToVote = false;
+    private int goCount = 0;
+    private int noGoCount = 0;
+    private boolean voteEval = false;
+    private Percept proposedTask;
+    private List<Percept> takenTasks = new ArrayList<>();
+    private List<Percept> taskList = new ArrayList<>();
     
     private Map<String, Tile> attachedBlocks = new HashMap<String, Tile>();
 
@@ -62,6 +74,23 @@ public class MagellanAgent extends Agent {
         N, E, W, S, OTHER
     }
 
+    public class TaskVote{
+        String id;
+        int dist;
+
+        public TaskVote(String id, int dist){
+            this.id = id;
+            this.dist = dist;
+        }
+
+    }
+
+    /**
+     * Constructor.
+     * 
+     * @param name    the agent's name
+     * @param mailbox the mail facility
+     */
     public MagellanAgent(final String name, final MailService mailbox, String connection) {
         super(name, mailbox);
         this.map = new AgentMap();
@@ -81,11 +110,10 @@ public class MagellanAgent extends Agent {
 
     @Override
     public void handleMessage(Percept message, String sender) {
-        if (message.getName().equals("name")){
+        if (message.getName().equals(NAME)){
             this.map.addConnection(message.getSource(), message.getParameters().get(0).toString());
         }
-        else if (message.getName().equals("coords")){
-            System.out.println("fndsk");
+        else if (message.getName().equals(COORDS)){
 
             int otherX = Integer.parseInt(message.getParameters().get(0).toString());
             int otherY = Integer.parseInt(message.getParameters().get(1).toString());
@@ -99,13 +127,28 @@ public class MagellanAgent extends Agent {
             int actualX = origoX + otherX;
             int actualY = origoY + otherY;
 
-            if((message.getSource().equals("Magellan6") && this.getName().equals("Magellan7"))
-            || (message.getSource().equals("Magellan7") && this.getName().equals("Magellan6"))){
-                System.out.println("nfdvksl");
-            }
-
             if( seesEntity(actualX, actualY) ){
                 this.map.addTeamMate(message.getSource(), new Coord(origoX, origoY));
+            }
+        }else if(message.getName().equals(VOTEPROP)){
+            String id = message.getParameters().get(0).toString();
+            int dist = Integer.parseInt(message.getParameters().get(1).toString());
+            String agent = message.getSource();
+            voteMap.put(agent, new TaskVote(id, dist));
+            needToVote = true;
+
+        }else if(message.getName().equals(VOTE)){
+            if (message.getParameters().get(0).toString().equals(GO)){
+                goCount++;
+            }else if (message.getParameters().get(0).toString().equals(NOGO)){
+                noGoCount++;
+            }
+            voteEval = true;
+        }else if(message.getName().equals(ACCEPT)){
+            for(Percept p : taskList){
+                if(p.getParameters().get(0).toString().equals(message.getParameters().get(0).toString())){
+                    takenTasks.add(p);
+                }
             }
         }
     }
@@ -139,7 +182,6 @@ public class MagellanAgent extends Agent {
     }
 
     private boolean seesEntity(int x, int y){
-        List<Percept> entities = new ArrayList<>();
         List<Percept> thingList = this.getPercepts().stream().filter(p -> p.getName().equals("thing")).collect(Collectors.toList());
         for(Percept perc : thingList){
             if( Integer.parseInt(perc.getParameters().get(0).toString()) == x 
@@ -154,6 +196,27 @@ public class MagellanAgent extends Agent {
 
     @Override
     public Action step() {
+        
+        if(needToVote){
+            vote();
+        }
+        if(voteEval){
+            if(goCount>noGoCount){
+                this.currentObjective = Objective.GetMaterial;
+                    currentTask = proposedTask;
+                    if( this.agentTasks.size() > 0 ){
+                        this.targetBlock = this.agentTasks.remove(0);
+                    }
+
+                Percept msg = new Percept(ACCEPT, new Identifier(currentTask.getParameters().get(0).toString()));
+                broadcast(msg, this.getName());
+            }else{
+                this.agentTasks.clear();
+            }
+            goCount = 0;
+            noGoCount = 0;
+            voteEval = false;
+        }
 
         if (nextAction != null)
         {
@@ -203,10 +266,37 @@ public class MagellanAgent extends Agent {
         return new Action(MOVE, new Identifier("n"));
     }
 
+    private void vote(){
+        HashMap<String, TaskVote> resGo = new HashMap<>();
+            List<String> resNoGo = new ArrayList<>();
+            for(String agent : voteMap.keySet()){
+                TaskVote tv = voteMap.get(agent);
+                if(resGo.containsKey(tv.id)){
+                    if(resGo.get(tv.id).dist > tv.dist){
+                        resNoGo.add(resGo.get(tv.id).id);
+                        resGo.get(tv.id).dist = tv.dist;
+                        resGo.get(tv.id).id = agent;
+                    }
+                }else{
+                    resGo.put(tv.id, new TaskVote(agent, tv.dist));
+                }
+            }
+            for(String taskId : resGo.keySet()){
+                Percept msg = new Percept(VOTE, new Identifier(GO));
+                sendMessage(msg, resGo.get(taskId).id, this.getName());
+            }
+            for(String agent : resNoGo){
+                Percept msg = new Percept(VOTE, new Identifier(NOGO));
+                sendMessage(msg, agent, this.getName());
+            }
+        voteMap.clear();
+        needToVote = false;
+    }
+
     private void introduce(){
         if(isFirstStep){
             Parameter p = new Identifier( this.getName() );
-            Percept msg = new Percept("name", p);
+            Percept msg = new Percept(NAME, p);
             msg.setSource(this.connection);
             broadcast(msg, this.getName());
             isFirstStep = false;
@@ -227,13 +317,13 @@ public class MagellanAgent extends Agent {
         paramList.add(parY);
         paramList.add(otherX);
         paramList.add(otherY);
-        Percept message = new Percept("coords", paramList);
+        Percept message = new Percept(COORDS, paramList);
         message.setSource(this.getName());
         broadcast(message, this.getName());
     }
 
     private void updateCurrentObjective(List<Percept> percepts) {
-        List<Percept> taskList = percepts.stream().filter(p -> p.getName().equals("task")).collect(Collectors.toList());
+        taskList = percepts.stream().filter(p -> p.getName().equals("task")).collect(Collectors.toList());
 
         if (taskList.isEmpty()) {
             currentTask = null;
@@ -244,7 +334,7 @@ public class MagellanAgent extends Agent {
             say("Found a new task!");
             for( Percept task : taskList ){
 
-                if(task.getClonedParameters().size() >= 3){
+                if(task.getClonedParameters().size() >= 3 && !takenTasks.contains(task)){
 
                     boolean acceptTask = true;
                     ArrayList<TaskElement> tempList = new ArrayList<TaskElement>();
@@ -267,15 +357,25 @@ public class MagellanAgent extends Agent {
                             break;
                         }
                     }
+
+
     
                     if(acceptTask){
-                        this.currentObjective = Objective.GetMaterial;
-                        currentTask = task;
-                        this.agentTasks = new ArrayList<TaskElement>(tempList);
-                        if( this.agentTasks.size() > 0 ){
-                            //this.targetBlock = this.agentTasks.get(0);
-                            this.targetBlock = this.agentTasks.remove(0);
+                        int sum = 0;
+                        for(TaskElement te : tempList){
+                            Tile t = this.map.getClosestElement(Type.DISPENSER, te.getName());
+                            sum += this.map.getDistance(t.getX(), t.getY());
                         }
+                        LinkedList<Parameter> paramList = new LinkedList<>();
+                        Parameter id = new Identifier(task.getParameters().get(0).toString());
+                        Parameter val = new Numeral(sum);
+                        paramList.add(id);
+                        paramList.add(val);
+                        this.agentTasks = new ArrayList<TaskElement>(tempList);
+                        Percept msg = new Percept(VOTEPROP, paramList);
+                        msg.setSource(this.getName());
+                        proposedTask = task;
+                        broadcast(msg, this.getName());
                         break;
                     }
                 }
@@ -379,7 +479,7 @@ public class MagellanAgent extends Agent {
                 if(operation.equals(ATTACH)){
                     say("I grab " + targetBlock.getName() + " block");
                     nextAction = new Action(operation, new Identifier(decyphDir(dir)));
-                    return new Action("request", new Identifier(decyphDir(dir)));
+                    return new Action(REQUEST, new Identifier(decyphDir(dir)));
                 }else if(operation.equals(DETACH)){
                     return new Action( operation, getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), tile.getX(),
                         tile.getY(), obstacleList, thingList));
@@ -566,7 +666,7 @@ public class MagellanAgent extends Agent {
 
         List<Percept> entityList = new ArrayList<>();
         for( Percept thing : thingList){
-            if( thing.getParameters().get(2).equals("entity") )
+            if( thing.getParameters().get(2).toString().equals("entity") )
                 entityList.add(thing);
         }
 
