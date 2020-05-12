@@ -2,6 +2,7 @@ package massim.javaagents;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import massim.javaagents.Coord;
@@ -19,8 +20,10 @@ public class AgentMap {
     private int plannedX;
     private int plannedY;
 
+    private List<String> encountered;
     private HashMap<Coord, Tile> gameMap;
-    private List<String> teamMates;
+    private HashMap<String, Coord> teamMates;
+    private HashMap<String, String> connections = new HashMap<>();
 
     public AgentMap( ){
         this.origoX = 0;
@@ -30,14 +33,31 @@ public class AgentMap {
         this.plannedX = 0;
         this.plannedY = 0;
         this.gameMap = new HashMap<Coord, Tile>();
-        this.teamMates = new ArrayList<>();
+        this.teamMates = new HashMap<>();
+        this.encountered = new ArrayList<>();
     }
 
-    public void addTeamMate( String teamMate ){
-        this.teamMates.add(teamMate);
+    public void addEncountered( String name ){
+        this.encountered.add(name);
     }
 
-    public List<String> getTeamMates(){
+    public List<String> getEncountered(){
+        return this.encountered;
+    }
+
+    public void addConnection( String connection, String name ){
+        this.connections.put(connection, name);
+    }
+
+    public HashMap<String,String> getConnections(){
+        return this.connections;
+    }
+
+    public void addTeamMate( String teamMate, Coord coord ){
+        this.teamMates.put(teamMate, coord);
+    }
+
+    public HashMap<String, Coord> getTeamMates(){
         return this.teamMates;
     }
 

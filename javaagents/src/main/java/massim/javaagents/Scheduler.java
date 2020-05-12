@@ -92,7 +92,7 @@ public class Scheduler implements AgentListener, EnvironmentListener{
                     agent = new BasicAgent(agentConf.name, mailService);
                     break;
                 case "MagellanAgent":
-                    agent = new MagellanAgent(agentConf.name, mailService);
+                    agent = new MagellanAgent(agentConf.name, mailService, agentConf.entity);
                     break;
                 // [add further types here]
                 default:
