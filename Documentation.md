@@ -145,12 +145,12 @@ private Boolean shouldGoToGoal() {
 For Compeleting the task we need the following methods:
 * getClosestElement
 * getIsAttached
-* getDirection
+* discover
 By the method we mentioned agents are able to accomplish the tasks.
 
 ```java
 public Coord calculateAttachedCoords(){
-        switch(attachedBlock.getDirection()){
+        switch(attachedBlock.discover()){
             case W:
                 return new Coord(this.map.getRelX()-1, this.map.getRelY());
             case E:

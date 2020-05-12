@@ -16,14 +16,29 @@ public class AgentMap {
     private int relativeX;
     private int relativeY;
 
+    private int plannedX;
+    private int plannedY;
+
     private HashMap<Coord, Tile> gameMap;
+    private List<String> teamMates;
 
     public AgentMap( ){
         this.origoX = 0;
         this.origoY = 0;
         this.relativeX = 0;
         this.relativeY = 0;
+        this.plannedX = 0;
+        this.plannedY = 0;
         this.gameMap = new HashMap<Coord, Tile>();
+        this.teamMates = new ArrayList<>();
+    }
+
+    public void addTeamMate( String teamMate ){
+        this.teamMates.add(teamMate);
+    }
+
+    public List<String> getTeamMates(){
+        return this.teamMates;
     }
 
     public int getRelX(){
@@ -32,6 +47,14 @@ public class AgentMap {
 
     public int getRelY(){
         return this.relativeY;
+    }
+
+    public int getPlannedX(){
+        return this.plannedX;
+    }
+
+    public int getPlannedY(){
+        return this.plannedY;
     }
 
     public int getOrigoX(){
@@ -50,6 +73,24 @@ public class AgentMap {
         this.relativeY = y;
     }
 
+    public void setPlannedX( int x ){
+        this.plannedX = x;
+    }
+
+    public void setPlannedY( int y ){
+        this.plannedY = y;
+    }
+
+    public void planStep( int x, int y ){
+        this.plannedX = x;
+        this.plannedY = y;
+    }
+
+    public void executePlan(){
+        this.relativeX = this.plannedX;
+        this.relativeY = this.plannedY;
+    }
+
     public void addTile(Tile tile){
         this.gameMap.put(new Coord(tile.getX(), tile.getY()), tile);
     }
@@ -63,27 +104,38 @@ public class AgentMap {
     }
 
     public Tile getClosestElement(Type type){
-        Tile ret_tile = getTilesByType(type).get(0);
-        int min = getDistance(ret_tile.getX(), ret_tile.getX());
-        for (Tile tile : getTilesByType(type)){
-            if( getDistance(tile.getX(), tile.getX()) < min ){
-                min = getDistance(tile.getX(), tile.getX());
-                ret_tile = tile;
+        List<Tile> ret_tiles = getTilesByType(type);
+        if(ret_tiles.size() > 0 ){
+            Tile ret_tile = ret_tiles.get(0);
+            int min = getDistance(ret_tile.getX(), ret_tile.getX());
+            for (Tile tile : getTilesByType(type)){
+                if( getDistance(tile.getX(), tile.getX()) < min ){
+                    min = getDistance(tile.getX(), tile.getX());
+                    ret_tile = tile;
+                }
             }
+            return ret_tile;
+        }else{
+            return null;
         }
-        return ret_tile;
     }
 
     public Tile getClosestElement(Type type, String name){
-        Tile ret_tile = getTilesByType(type, name).get(0);
-        int min = getDistance(ret_tile.getX(), ret_tile.getX());
-        for (Tile tile : getTilesByType(type)){
-            if( getDistance(tile.getX(), tile.getX()) < min && tile.getName().equals(name)){
-                min = getDistance(tile.getX(), tile.getX());
-                ret_tile = tile;
+        List<Tile> ret_tiles = getTilesByType(type, name);
+        if(ret_tiles.size() > 0 ){
+            Tile ret_tile = ret_tiles.get(0);
+            int min = getDistance(ret_tile.getX(), ret_tile.getX());
+            for (Tile tile : getTilesByType(type)){
+                if( getDistance(tile.getX(), tile.getX()) < min && tile.getName().equals(name)){
+                    min = getDistance(tile.getX(), tile.getX());
+                    ret_tile = tile;
+                }
             }
+            return ret_tile;
+        }else{
+            return null;
         }
-        return ret_tile;
+        
     }
 
     public Tile getTileByCoord( Coord coord ){
@@ -133,4 +185,5 @@ public class AgentMap {
         }
         return false;
     }
+
 }

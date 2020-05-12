@@ -26,7 +26,7 @@
 
       "steps" : 500,
       "randomSeed" : 17,
-      "randomFail" : 1,
+      "randomFail" : 0,
       "entities" : [{"standard" : 10}],
 
       "clearSteps" : 3,
@@ -60,7 +60,7 @@
       },
 
       "events" : {
-        "chance" : 15,
+        "chance" : 0,
         "radius" : [3, 5],
         "warning" : 5,
         "create" : [-3, 1],

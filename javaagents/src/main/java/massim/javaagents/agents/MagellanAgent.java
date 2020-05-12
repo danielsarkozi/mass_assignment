@@ -3,6 +3,7 @@ package massim.javaagents.agents;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -29,7 +30,7 @@ public class MagellanAgent extends Agent {
     private Objective currentObjective;
     private Direction prevDirection;
     private Percept currentTask;
-    private TaskElement targetBlock;
+    private TaskElement targetBlock = null;
     private TaskElement attachedBlock;
     private ArrayList<TaskElement> agentTasks = new ArrayList<TaskElement>();
     private int vision;
@@ -64,9 +65,8 @@ public class MagellanAgent extends Agent {
 
     @Override
     public void handleMessage(Percept message, String sender) {
-
+        System.out.println("asd");
     }
-
 
     /**
      * Sends a percept as a message to the given agent.
@@ -93,7 +93,7 @@ public class MagellanAgent extends Agent {
      * @param message the message to say
      */
     void say(String message){
-        System.out.println("[ " + name + " ]  " + message);
+        System.out.println("[ " + this.getName() + " ]  " + message);
     }
 
     @Override
@@ -104,6 +104,12 @@ public class MagellanAgent extends Agent {
             final Parameter param = p.getParameters().getFirst();
             if (param instanceof Identifier)
                 say("Step " + ((Identifier) param).getValue());
+        });
+
+        percepts.stream().filter(p -> p.getName().equals("lastActionResult")).findAny().ifPresent(p -> {
+            String param = p.getParameters().getFirst().toString();
+            if (param.equals("success"))
+                this.map.executePlan();
         });
 
         List<Percept> goalList = percepts.stream().filter(p -> p.getName().equals("goal")).collect(Collectors.toList());
@@ -125,12 +131,26 @@ public class MagellanAgent extends Agent {
             case Discovery:
                 return stepDiscovery(obstacleList, thingList);
             case GetMaterial:
-                return stepGetMaterial(obstacleList, thingList);
+                return executeStep(obstacleList, thingList, Type.DISPENSER, "attach");
             case DropMaterial:
-                return stepDropMaterial(obstacleList, thingList);
+                return executeStep(obstacleList, thingList, Type.GOAL, "detach");
         }
 
         return new Action("move", new Identifier("n"));
+    }
+
+    private void shareMap(String name){
+
+    }
+
+    private void shareCoordinates(String name){
+        LinkedList<Parameter> paramList = new LinkedList<>();
+        Parameter x = new Numeral(this.map.getRelX());
+        Parameter y = new Numeral(this.map.getRelY());
+        paramList.add(x);
+        paramList.add(y);
+        Percept message = new Percept("coords", paramList);
+        sendMessage(message, name, this.getName());
     }
 
     private void updateCurrentObjective(List<Percept> percepts) {
@@ -174,7 +194,7 @@ public class MagellanAgent extends Agent {
                         currentTask = task;
                         this.agentTasks = new ArrayList<TaskElement>(tempList);
                         if( this.agentTasks.size() > 0 ){
-                            this.targetBlock = this.agentTasks.get(0);
+                            //this.targetBlock = this.agentTasks.get(0);
                             this.targetBlock = this.agentTasks.remove(0);
                         }
                         break;
@@ -182,14 +202,6 @@ public class MagellanAgent extends Agent {
                 }
             }
         }
-
-        /*
-        if (currentObjective == Objective.GetMaterial && false) 
-            currentObjective = Objective.Discovery;
-         
-        if (hasBlockForTask(currentTask))
-            currentObjective = Objective.DropMaterial;
-        */
     }
 
     private Tile getTargetTile() {
@@ -231,52 +243,77 @@ public class MagellanAgent extends Agent {
     }
 
     private Action stepDiscovery(List<Percept> obstacleList, List<Percept> thingList) {
-        Identifier dir = this.getDirection(obstacleList, thingList);
+        Identifier dir = this.discover(obstacleList, thingList);
         moveAgent(dir.toString());
         return new Action("move", dir);
     }
+    
+    public Action executeStep( List<Percept> obstacleList, List<Percept> thingList, Type type, String operation ){
 
-    private Action stepGetMaterial(List<Percept> obstacleList, List<Percept> thingList) {
+        Tile tile = null;
 
-        Tile goal = this.map.getClosestElement(Type.DISPENSER, this.targetBlock.getName());
-        if (this.map.getDistanceFromSpawn(goal.getX(), goal.getY()) > 1) {
-            Identifier dir = getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-                    goal.getY(), obstacleList, thingList);
+        if( type == Type.DISPENSER ){
+            tile = this.map.getClosestElement(Type.DISPENSER, this.targetBlock.getName());
+        }else if( type == Type.GOAL ){
+            tile = this.map.getClosestElement(Type.GOAL);
+        }
+
+        if ( tile == null){
+            this.currentObjective = Objective.Discovery;
+            return stepDiscovery(obstacleList, thingList);
+        } else if (this.map.getDistanceFromSpawn(tile.getX(), tile.getY()) > 3) {
+            Identifier dir = getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), tile.getX(),
+                    tile.getY(), obstacleList, thingList);
             moveAgent(dir.toString());
             return new Action("move", dir);
         } else {
-            this.currentObjective = Objective.DropMaterial;
-            Direction dir = getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(), goal.getY());
-            attachedBlock = new TaskElement(targetBlock);
-            attachedBlock.setIsAttached(true);
-            attachedBlock.setDirection(dir);
-            say("I grab " + targetBlock.getName() + " block");
-            return new Action("attach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-                    goal.getY(), obstacleList, thingList));
-            /*Identifier dir = getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-                goal.getY(), obstacleList, thingList);
-            attachedBlocks.put(dir.toString(), goal);
-            return new Action("attach", dir);*/
+
+            int x = 0;
+            int y = 0;
+            boolean b = true;
+
+            for (Percept percept : thingList){
+                if( percept.getParameters().get(2).toString().equals("dispenser") && percept.getParameters().get(3).toString().equals(tile.getName()) ){
+                    x = Integer.parseInt(percept.getParameters().get(0).toString());
+                    y = Integer.parseInt(percept.getParameters().get(1).toString());
+                    b = false;
+                }
+            }
+
+            if(b){
+                this.currentObjective = Objective.Discovery;
+                return new Action("move", discover(obstacleList, thingList));
+            }
+
+            if (this.map.getDistance(x, y) > 1){
+                Identifier id = getRelativeIdentifierToElem(0, 0, x, y, obstacleList, thingList);;
+                if( id != null ){
+                    return new Action("move", id);
+                }
+                return new Action("move", new Identifier("Error"));
+            }else{
+                this.currentObjective = Objective.DropMaterial;
+                Direction dir = getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), tile.getX(), tile.getY());
+                attachedBlock = new TaskElement(targetBlock);
+                attachedBlock.setIsAttached(true);
+                attachedBlock.setDirection(dir);
+                return new Action( operation, getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), tile.getX(),
+                        tile.getY(), obstacleList, thingList));
+            }
         }
     }
 
-    private Action stepDropMaterial(List<Percept> obstacleList, List<Percept> thingList) {
+    public Identifier getIdentifierByPercept( List<Percept> thingList, List<Percept> obstacleList, Tile tile){
 
-        Tile goal = this.map.getClosestElement(Type.GOAL);
-        if (this.map.getDistanceFromSpawn(goal.getX(), goal.getY()) > 1) {
-            Identifier dir = getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-                    goal.getY(), obstacleList, thingList);
-            moveAgent(dir.toString());
-            return new Action("move", dir);
-        } else {
-            if(agentTasks.size() > 0){
-                targetBlock = agentTasks.remove(0);
-                this.currentTask = null;
+        for (Percept percept : thingList){
+            if( percept.getParameters().get(3).toString().equals("dispenser") && percept.getParameters().get(4).toString().equals(tile.getName()) ){
+                int x = Integer.parseInt(percept.getParameters().get(0).toString());
+                int y = Integer.parseInt(percept.getParameters().get(1).toString());
+                return getRelativeIdentifierToElem(0, 0, x, y, obstacleList, thingList);
             }
-            say("I drop " + targetBlock.getName() + " block");
-            return new Action("detach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-                    goal.getY(), obstacleList, thingList));
         }
+
+        return null;
     }
 
     public void updateMap(List<Percept> obstacleList, List<Percept> thingList, List<Percept> goalList) {
@@ -313,6 +350,8 @@ public class MagellanAgent extends Agent {
                 Tile tile = new Tile(Tile.Type.DISPENSER, relX, relY);
                 tile.setName(name);
                 this.map.addTile(tile);
+            }else if (type.equals("entity")){
+                meetTeamMate( p.getSource() );
             }
         }
 
@@ -336,13 +375,20 @@ public class MagellanAgent extends Agent {
         }
     }
 
+    private void meetTeamMate( String name ){
+        if(!this.map.getTeamMates().contains(name)){
+            shareCoordinates(name);
+            this.map.addTeamMate(name);
+        }
+    }
+
     public void updatePosition(int x, int y) {
         this.map.setRelX(x);
         this.map.setRelY(y);
     }
 
     public Coord calculateAttachedCoords(){
-        switch(attachedBlock.getDirection()){
+        switch(attachedBlock.discover()){
             case W:
                 return new Coord(this.map.getRelX()-1, this.map.getRelY());
             case E:
@@ -356,7 +402,7 @@ public class MagellanAgent extends Agent {
         }
     }
 
-    public Identifier getDirection(List<Percept> obstacleList, List<Percept> thingList) {
+    public Identifier discover(List<Percept> obstacleList, List<Percept> thingList) {
 
         Set<Direction> bannedDirs = new HashSet<Direction>();
         Set<Direction> originalDirs = new HashSet<>(directions);
@@ -389,7 +435,6 @@ public class MagellanAgent extends Agent {
     }
 
 
-
     public void banDirections(Set<Direction> bannedDirs, List<Percept> elemList) {
         for (Percept elem : elemList) {
             int x = getCoord(elem.getClonedParameters().get(0));
@@ -417,7 +462,6 @@ public class MagellanAgent extends Agent {
 
     public Identifier getRelativeIdentifierToElem(int selfX, int selfY, int elemX, int elemY, List<Percept> obstacleList,
             List<Percept> thingList) {
-
         return new Identifier(decyphDir(getRelativeDirectionToElem(selfX, selfY, elemX, elemY, obstacleList, thingList)));
     }
 
@@ -432,7 +476,14 @@ public class MagellanAgent extends Agent {
         Set<Direction> bannedDirs = new HashSet<Direction>();
         Set<Direction> originalDirs = new HashSet<>(directions);
 
+        List<Percept> entityList = new ArrayList<>();
+        for( Percept thing : thingList){
+            if( thing.getParameters().get(2).equals("entity") )
+                entityList.add(thing);
+        }
+
         banDirections(bannedDirs, obstacleList);
+        banDirections(bannedDirs, entityList);
 
         if (selfX > elemX) {
             distX = Math.abs(selfX - elemX);
@@ -551,19 +602,19 @@ public class MagellanAgent extends Agent {
         switch (dir) {
             case W:
                 say("Let's go west!");
-                updatePosition(this.map.getRelX() - 1, this.map.getRelY());
+                this.map.planStep(this.map.getRelX() - 1, this.map.getRelY());
                 break;
             case E:
                 say("Let's go east!");
-                updatePosition(this.map.getRelX() + 1, this.map.getRelY());
+                this.map.planStep(this.map.getRelX() + 1, this.map.getRelY());
                 break;
             case S:
                 say("Let's go south!");
-                updatePosition(this.map.getRelX(), this.map.getRelY() + 1);
+                this.map.planStep(this.map.getRelX(), this.map.getRelY() + 1);
                 break;
             case N:
                 say("Let's go north!");
-                updatePosition(this.map.getRelX(), this.map.getRelY() - 1);
+                this.map.planStep(this.map.getRelX(), this.map.getRelY() - 1);
                 break;
         }
     }
@@ -572,19 +623,19 @@ public class MagellanAgent extends Agent {
         switch (dir) {
             case "w":
                 say("Let's go west!");
-                updatePosition(this.map.getRelX() - 1, this.map.getRelY());
+                this.map.planStep(this.map.getRelX() - 1, this.map.getRelY());
                 break;
             case "e":
                 say("Let's go east!");
-                updatePosition(this.map.getRelX() + 1, this.map.getRelY());
+                this.map.planStep(this.map.getRelX() + 1, this.map.getRelY());
                 break;
             case "s":
                 say("Let's go south!");
-                updatePosition(this.map.getRelX(), this.map.getRelY() + 1);
+                this.map.planStep(this.map.getRelX(), this.map.getRelY() + 1);
                 break;
             case "n":
                 say("Let's go north!");
-                updatePosition(this.map.getRelX(), this.map.getRelY() - 1);
+                this.map.planStep(this.map.getRelX(), this.map.getRelY() - 1);
                 break;
         }
     }

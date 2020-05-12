@@ -11,11 +11,13 @@ public class Tile{
     private int x;
     private int y;
     private String name;
+    private boolean isMoveable;
 
     public Tile( Type type, int x, int y ){
         this.type = type;
         this.x = x;
         this.y = y;
+        this.isMoveable = true;
     }
 
     public Type getType(){

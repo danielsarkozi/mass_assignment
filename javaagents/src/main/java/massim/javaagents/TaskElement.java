@@ -24,7 +24,7 @@ public class TaskElement {
             this.y = te.getY();
             this.name = te.getName();
             this.isAttached = te.getIsAttached();
-            this.attachedDir = te.getDirection();
+            this.attachedDir = te.discover();
         }
 
         public int getX(){
@@ -43,7 +43,7 @@ public class TaskElement {
             return this.isAttached;
         }
 
-        public MagellanAgent.Direction getDirection(){
+        public MagellanAgent.Direction discover(){
             return this.attachedDir;
         }
 
