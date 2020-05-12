@@ -33,7 +33,6 @@ public class MagellanAgent extends Agent {
     private TaskElement attachedBlock;
     private ArrayList<TaskElement> agentTasks = new ArrayList<TaskElement>();
     private int vision;
-    private Action nextAction = null;
     
     private Map<String, Tile> attachedBlocks = new HashMap<String, Tile>();
 
@@ -65,7 +64,8 @@ public class MagellanAgent extends Agent {
 
     @Override
     public void handleMessage(Percept message, String sender) {
-
+        
+        }
     }
 
 
@@ -77,6 +77,24 @@ public class MagellanAgent extends Agent {
      * @param sender the agent sending the message
      */
     protected void sendMessage(Percept message, String receiver, String sender){
+        // if(mqSender == null)
+        //     return;
+        
+        // parseExecutor.submit(() -> {
+        //     Message msg = new Message(CONTENT_TYPE_PATH, GsonInstance.getInstance().toJson(positions, POSITION_LIST_TYPE));
+        //     mqSender.sendMessage(msg);
+        // });
+        // parseExecutor.submit(()->{
+
+        // })
+        Agent recipient = register.get(to);
+        
+        if(recipient == null) {
+            logger.warning("Cannot deliver message to " + to + "; unknown target,");
+        }
+        else{
+            recipient.handleMessage(message, from);
+        }
         mailbox.sendMessage(message, receiver, sender);
     }
 
@@ -86,7 +104,19 @@ public class MagellanAgent extends Agent {
      * @param sender the agent sending the message
      */
     void broadcast(Percept message, String sender){
-        mailbox.broadcast(message, sender);
+        //AgentContainer agentContainer
+        // brodcast
+        // if(agentContainer.getMqSender() == null)
+        //     return;
+
+        // AgentContainerMessage agentContainerMessage = new AgentContainerMessage(agentContainer);
+        // parseExecutor.submit(() -> {
+        //     Message msg = new Message(CONTENT_TYPE_AGENT_CONTAINER, GsonInstance.getInstance().toJson(agentContainerMessage));
+        //     agentContainer.getMqSender().sendMessage(msg);
+        // });
+        agentsByTeam.get(teamForAgent.get(sender)).stream()
+                .map(Agent::getName).filter(ag -> !ag.equals(sender)).forEach(ag -> sendMessage(message, ag, sender));
+                //mailbox.broadcast(message, sender);
     }
 
     /**
@@ -94,17 +124,11 @@ public class MagellanAgent extends Agent {
      * @param message the message to say
      */
     void say(String message){
-        //System.out.println("[ " + name + " ]  " + message);
+        System.out.println("[ " + name + " ]  " + message);
     }
 
     @Override
     public Action step() {
-        if (nextAction != null)
-        {
-            Action act = nextAction;
-            nextAction = null;
-            return act;
-        }
         // System.out.println(this.getName() + " Magellan step");
         final List<Percept> percepts = getPercepts();
         percepts.stream().filter(p -> p.getName().equals("step")).findAny().ifPresent(p -> {
@@ -147,7 +171,7 @@ public class MagellanAgent extends Agent {
             currentTask = null;
             currentObjective = Objective.Discovery;
 
-        } else if (currentTask == null || !taskList.contains(currentTask)) {
+        } else if (!taskList.contains(currentTask)) {
 
             say("Found a new task!");
             for( Percept task : taskList ){
@@ -245,10 +269,7 @@ public class MagellanAgent extends Agent {
 
     private Action stepGetMaterial(List<Percept> obstacleList, List<Percept> thingList) {
 
-        System.out.println("GET MATERIALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
         Tile goal = this.map.getClosestElement(Type.DISPENSER, this.targetBlock.getName());
-        if (goal == null)
-            return stepDiscovery(obstacleList, thingList);
         if (this.map.getDistanceFromSpawn(goal.getX(), goal.getY()) > 1) {
             Identifier dir = getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
                     goal.getY(), obstacleList, thingList);
@@ -260,12 +281,9 @@ public class MagellanAgent extends Agent {
             attachedBlock = new TaskElement(targetBlock);
             attachedBlock.setIsAttached(true);
             attachedBlock.setDirection(dir);
-            agentTasks.add(attachedBlock);
-            attachedBlocks.put(dir.toString(), goal);
             say("I grab " + targetBlock.getName() + " block");
-            nextAction = new Action("attach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+            return new Action("attach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
                     goal.getY(), obstacleList, thingList));
-            return new Action("request", new Identifier(decyphDir(dir)));
             /*Identifier dir = getRelativeDirectionToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
                 goal.getY(), obstacleList, thingList);
             attachedBlocks.put(dir.toString(), goal);
@@ -276,8 +294,6 @@ public class MagellanAgent extends Agent {
     private Action stepDropMaterial(List<Percept> obstacleList, List<Percept> thingList) {
 
         Tile goal = this.map.getClosestElement(Type.GOAL);
-        if (goal == null)
-            return stepDiscovery(obstacleList, thingList);
         if (this.map.getDistanceFromSpawn(goal.getX(), goal.getY()) > 1) {
             Identifier dir = getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
                     goal.getY(), obstacleList, thingList);
@@ -289,9 +305,8 @@ public class MagellanAgent extends Agent {
                 this.currentTask = null;
             }
             say("I drop " + targetBlock.getName() + " block");
-            return new Action("detach", new Identifier(decyphDir(targetBlock.getDirection())));
-            //return new Action("detach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
-            //        goal.getY(), obstacleList, thingList));
+            return new Action("detach", getRelativeIdentifierToElem(this.map.getRelX(), this.map.getRelY(), goal.getX(),
+                    goal.getY(), obstacleList, thingList));
         }
     }
 
