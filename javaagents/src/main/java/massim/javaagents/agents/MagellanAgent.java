@@ -64,7 +64,14 @@ public class MagellanAgent extends Agent {
 
     @Override
     public void handleMessage(Percept message, String sender) {
-        
+            if(message == null){
+                logger.warning("Cannot handle message to " + to + "; null messages");
+            } else if(sender == null){
+                logger.warning("Cannot find the origin" + to + "; unknown sender,");
+            } else {
+                mailbox.handleMessage(message, sender);
+            }
+            
         }
     }
 
