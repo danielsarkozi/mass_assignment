@@ -6,7 +6,7 @@ import java.util.List;
 
 import massim.javaagents.Coord;
 
-import massim.javaagents.Tile.Type;;
+import massim.javaagents.Tile.Type;
 
 public class AgentMap {
 
